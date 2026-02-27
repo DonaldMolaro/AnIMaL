@@ -27,6 +27,38 @@ cmake -S . -B build
 cmake --build build
 ```
 
+## Unit Tests
+
+Configure and run tests:
+
+```bash
+cmake -S . -B build -DANIMAL_ENABLE_TESTS=ON
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+The unit test binary is:
+
+```bash
+./build/animal_tests
+```
+
+## Coverage
+
+Generate gcov coverage reports:
+
+```bash
+cmake -S . -B build-coverage -DANIMAL_ENABLE_TESTS=ON -DANIMAL_ENABLE_COVERAGE=ON
+cmake --build build-coverage
+cmake --build build-coverage --target coverage
+```
+
+This writes `.gcov` reports in:
+
+```text
+build-coverage
+```
+
 ## Run the examples
 
 ```bash

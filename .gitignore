@@ -1,2 +1,4 @@
 build/
+build-coverage/
+*.gcov
 .DS_Store
