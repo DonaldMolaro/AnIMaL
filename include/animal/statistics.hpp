@@ -17,8 +17,11 @@ struct ModeResult {
 double mean(const std::vector<double>& values);
 double median(std::vector<double> values);
 std::optional<ModeResult> mode(const std::vector<double>& values);
+double variance(const std::vector<double>& values);
+double stddev(const std::vector<double>& values);
 double covariance(const std::vector<double>& x, const std::vector<double>& y);
 double pearson_correlation(const std::vector<double>& x, const std::vector<double>& y);
+double r_squared(const std::vector<double>& actual, const std::vector<double>& predicted);
 
 std::vector<double> column_values(const Matrix& matrix, std::size_t column_index);
 

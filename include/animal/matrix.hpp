@@ -156,15 +156,119 @@ public:
         return *this;
     }
 
+    Matrix row(std::size_t r) const {
+        if (r >= rows_) {
+            throw std::runtime_error("row index out of range");
+        }
+        Matrix out(1, cols_);
+        for (std::size_t c = 0; c < cols_; ++c) {
+            out(0, c) = (*this)(r, c);
+        }
+        return out;
+    }
+
+    Matrix col(std::size_t c) const {
+        if (c >= cols_) {
+            throw std::runtime_error("col index out of range");
+        }
+        Matrix out(rows_, 1);
+        for (std::size_t r = 0; r < rows_; ++r) {
+            out(r, 0) = (*this)(r, c);
+        }
+        return out;
+    }
+
+    Matrix slice(std::size_t r0, std::size_t r1, std::size_t c0, std::size_t c1) const {
+        if (r0 > r1 || c0 > c1 || r1 > rows_ || c1 > cols_) {
+            throw std::runtime_error("slice: invalid range");
+        }
+        Matrix out(r1 - r0, c1 - c0);
+        for (std::size_t r = r0; r < r1; ++r) {
+            for (std::size_t c = c0; c < c1; ++c) {
+                out(r - r0, c - c0) = (*this)(r, c);
+            }
+        }
+        return out;
+    }
+
+    static Matrix hstack(const Matrix& left, const Matrix& right) {
+        if (left.rows_ != right.rows_) {
+            throw std::runtime_error("hstack: row count mismatch");
+        }
+        Matrix out(left.rows_, left.cols_ + right.cols_);
+        for (std::size_t r = 0; r < left.rows_; ++r) {
+            for (std::size_t c = 0; c < left.cols_; ++c) {
+                out(r, c) = left(r, c);
+            }
+            for (std::size_t c = 0; c < right.cols_; ++c) {
+                out(r, left.cols_ + c) = right(r, c);
+            }
+        }
+        return out;
+    }
+
+    static Matrix vstack(const Matrix& top, const Matrix& bottom) {
+        if (top.cols_ != bottom.cols_) {
+            throw std::runtime_error("vstack: column count mismatch");
+        }
+        Matrix out(top.rows_ + bottom.rows_, top.cols_);
+        for (std::size_t r = 0; r < top.rows_; ++r) {
+            for (std::size_t c = 0; c < top.cols_; ++c) {
+                out(r, c) = top(r, c);
+            }
+        }
+        for (std::size_t r = 0; r < bottom.rows_; ++r) {
+            for (std::size_t c = 0; c < bottom.cols_; ++c) {
+                out(top.rows_ + r, c) = bottom(r, c);
+            }
+        }
+        return out;
+    }
+
+    Matrix reshape(std::size_t new_rows, std::size_t new_cols) const {
+        if (new_rows * new_cols != data_.size()) {
+            throw std::runtime_error("reshape: total element count must match");
+        }
+        Matrix out(new_rows, new_cols);
+        out.data_ = data_;
+        return out;
+    }
+
+    Matrix& operator+=(const Matrix& other) {
+        assert_same_shape(other, "operator+=");
+        for (std::size_t i = 0; i < data_.size(); ++i) {
+            data_[i] += other.data_[i];
+        }
+        return *this;
+    }
+
+    double sum() const {
+        double total = 0.0;
+        for (double v : data_) {
+            total += v;
+        }
+        return total;
+    }
+
+    Matrix column_sum() const {
+        Matrix out(1, cols_, 0.0);
+        for (std::size_t r = 0; r < rows_; ++r) {
+            for (std::size_t c = 0; c < cols_; ++c) {
+                out(0, c) += (*this)(r, c);
+            }
+        }
+        return out;
+    }
+
     Matrix column_mean() const {
         Matrix out(1, cols_);
         const double inv_rows = rows_ > 0 ? 1.0 / static_cast<double>(rows_) : 0.0;
         for (std::size_t c = 0; c < cols_; ++c) {
-            double sum = 0.0;
+            double s = 0.0;
             for (std::size_t r = 0; r < rows_; ++r) {
-                sum += (*this)(r, c);
+                s += (*this)(r, c);
             }
-            out(0, c) = sum * inv_rows;
+            out(0, c) = s * inv_rows;
         }
         return out;
     }
@@ -173,11 +277,44 @@ public:
         if (data_.empty()) {
             return 0.0;
         }
-        double sum = 0.0;
-        for (double v : data_) {
-            sum += v;
+        return sum() / static_cast<double>(data_.size());
+    }
+
+    double min() const {
+        if (data_.empty()) {
+            throw std::runtime_error("min: matrix is empty");
         }
-        return sum / static_cast<double>(data_.size());
+        double result = data_[0];
+        for (std::size_t i = 1; i < data_.size(); ++i) {
+            if (data_[i] < result) result = data_[i];
+        }
+        return result;
+    }
+
+    double max() const {
+        if (data_.empty()) {
+            throw std::runtime_error("max: matrix is empty");
+        }
+        double result = data_[0];
+        for (std::size_t i = 1; i < data_.size(); ++i) {
+            if (data_[i] > result) result = data_[i];
+        }
+        return result;
+    }
+
+    std::size_t argmax(std::size_t row_index) const {
+        if (row_index >= rows_) {
+            throw std::runtime_error("argmax: row index out of range");
+        }
+        std::size_t best = 0;
+        double best_val = (*this)(row_index, 0);
+        for (std::size_t c = 1; c < cols_; ++c) {
+            if ((*this)(row_index, c) > best_val) {
+                best_val = (*this)(row_index, c);
+                best = c;
+            }
+        }
+        return best;
     }
 
 private:
@@ -207,6 +344,10 @@ inline std::ostream& operator<<(std::ostream& os, const Matrix& m) {
         }
     }
     return os;
+}
+
+inline Matrix operator*(double scalar, const Matrix& m) {
+    return m * scalar;
 }
 
 }  // namespace animal

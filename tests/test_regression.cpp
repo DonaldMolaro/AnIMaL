@@ -59,8 +59,60 @@ void test_regression_training() {
     animal::test::require(bad_degree, "invalid polynomial degree should throw");
 }
 
+void test_regression_r_squared() {
+    animal::LinearRegression lin;
+    animal::Matrix x(20, 1);
+    animal::Matrix y(20, 1);
+    for (std::size_t i = 0; i < 20; ++i) {
+        const double xv = static_cast<double>(i + 1);
+        x(i, 0) = xv;
+        y(i, 0) = 2.0 * xv + 1.0;
+    }
+
+    lin.fit(x, y, 6000, 0.01);
+    const double r2 = lin.r_squared(x, y);
+    animal::test::require(r2 > 0.99, "linear r_squared should be close to 1.0");
+}
+
+void test_regression_fit_history() {
+    animal::LinearRegression lin;
+    animal::Matrix x(10, 1);
+    animal::Matrix y(10, 1);
+    for (std::size_t i = 0; i < 10; ++i) {
+        x(i, 0) = static_cast<double>(i);
+        y(i, 0) = 3.0 * static_cast<double>(i) + 2.0;
+    }
+
+    lin.fit(x, y, 100, 0.01);
+    const auto& history = lin.fit_history();
+    animal::test::require(history.size() == 100, "fit_history should have 100 entries");
+    animal::test::require(history.back() < history.front(), "fit_history should show decreasing loss");
+}
+
+void test_poly_r_squared() {
+    animal::PolynomialRegression poly(2);
+    animal::Matrix px(17, 1);
+    animal::Matrix py(17, 1);
+    for (int i = -8; i <= 8; ++i) {
+        const std::size_t r = static_cast<std::size_t>(i + 8);
+        const double xv = static_cast<double>(i) / 2.0;
+        px(r, 0) = xv;
+        py(r, 0) = 0.5 * xv * xv - 1.5 * xv + 2.0;
+    }
+
+    poly.fit(px, py, 18000, 0.02);
+    const double r2 = poly.r_squared(px, py);
+    animal::test::require(r2 > 0.999, "poly r_squared should be close to 1.0");
+
+    const auto& history = poly.fit_history();
+    animal::test::require(!history.empty(), "poly fit_history should not be empty");
+}
+
 }  // namespace
 
 void register_regression_tests(std::vector<animal::test::TestCase>& tests) {
     tests.push_back({"regression_training", test_regression_training});
+    tests.push_back({"regression_r_squared", test_regression_r_squared});
+    tests.push_back({"regression_fit_history", test_regression_fit_history});
+    tests.push_back({"poly_r_squared", test_poly_r_squared});
 }

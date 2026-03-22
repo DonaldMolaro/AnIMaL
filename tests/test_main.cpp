@@ -14,6 +14,7 @@ int main() {
     register_bayes_tests(tests);
     register_losses_layers_tests(tests);
     register_regression_tests(tests);
+    register_metrics_tests(tests);
 
     int failures = 0;
     for (const auto& test : tests) {

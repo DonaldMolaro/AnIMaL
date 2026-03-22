@@ -10,3 +10,4 @@ void register_statistics_tests(std::vector<animal::test::TestCase>& tests);
 void register_bayes_tests(std::vector<animal::test::TestCase>& tests);
 void register_losses_layers_tests(std::vector<animal::test::TestCase>& tests);
 void register_regression_tests(std::vector<animal::test::TestCase>& tests);
+void register_metrics_tests(std::vector<animal::test::TestCase>& tests);

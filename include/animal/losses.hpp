@@ -76,4 +76,50 @@ private:
     }
 };
 
+class BinaryCrossEntropyLoss final : public Loss {
+public:
+    double forward(const Matrix& prediction, const Matrix& target) override {
+        check_shapes(prediction, target);
+
+        double total = 0.0;
+        for (std::size_t r = 0; r < prediction.rows(); ++r) {
+            for (std::size_t c = 0; c < prediction.cols(); ++c) {
+                const double p = clamp_probability(prediction(r, c));
+                const double t = target(r, c);
+                total -= t * std::log(p) + (1.0 - t) * std::log(1.0 - p);
+            }
+        }
+        return total / static_cast<double>(prediction.rows());
+    }
+
+    Matrix backward(const Matrix& prediction, const Matrix& target) override {
+        check_shapes(prediction, target);
+
+        Matrix grad(prediction.rows(), prediction.cols());
+        const double inv_batch = 1.0 / static_cast<double>(prediction.rows());
+        for (std::size_t r = 0; r < prediction.rows(); ++r) {
+            for (std::size_t c = 0; c < prediction.cols(); ++c) {
+                const double p = clamp_probability(prediction(r, c));
+                const double t = target(r, c);
+                grad(r, c) = ((-t / p) + ((1.0 - t) / (1.0 - p))) * inv_batch;
+            }
+        }
+        return grad;
+    }
+
+private:
+    static double clamp_probability(double p) {
+        constexpr double eps = 1e-12;
+        if (p < eps) return eps;
+        if (p > 1.0 - eps) return 1.0 - eps;
+        return p;
+    }
+
+    static void check_shapes(const Matrix& prediction, const Matrix& target) {
+        if (prediction.rows() != target.rows() || prediction.cols() != target.cols()) {
+            throw std::runtime_error("BinaryCrossEntropyLoss: prediction/target shape mismatch");
+        }
+    }
+};
+
 }  // namespace animal

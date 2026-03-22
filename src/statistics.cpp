@@ -86,6 +86,17 @@ std::optional<ModeResult> mode(const std::vector<double>& values) {
     return ModeResult{dequantize(best_key), best_frequency, true};
 }
 
+double variance(const std::vector<double>& values) {
+    if (values.size() < 2) {
+        throw std::runtime_error("variance: need at least 2 values");
+    }
+    return covariance(values, values);
+}
+
+double stddev(const std::vector<double>& values) {
+    return std::sqrt(variance(values));
+}
+
 double covariance(const std::vector<double>& x, const std::vector<double>& y) {
     if (x.empty() || y.empty()) {
         throw std::runtime_error("covariance: inputs must not be empty");
@@ -119,6 +130,30 @@ double pearson_correlation(const std::vector<double>& x, const std::vector<doubl
     }
 
     return cov / denom;
+}
+
+double r_squared(const std::vector<double>& actual, const std::vector<double>& predicted) {
+    if (actual.empty() || predicted.empty()) {
+        throw std::runtime_error("r_squared: inputs must not be empty");
+    }
+    if (actual.size() != predicted.size()) {
+        throw std::runtime_error("r_squared: actual and predicted must have the same length");
+    }
+
+    const double y_mean = mean(actual);
+    double ss_res = 0.0;
+    double ss_tot = 0.0;
+    for (std::size_t i = 0; i < actual.size(); ++i) {
+        const double residual = actual[i] - predicted[i];
+        ss_res += residual * residual;
+        const double deviation = actual[i] - y_mean;
+        ss_tot += deviation * deviation;
+    }
+
+    if (ss_tot == 0.0) {
+        return 1.0;
+    }
+    return 1.0 - (ss_res / ss_tot);
 }
 
 std::vector<double> column_values(const Matrix& matrix, std::size_t column_index) {

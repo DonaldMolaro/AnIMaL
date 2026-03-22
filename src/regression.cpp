@@ -18,6 +18,8 @@ void LinearRegression::fit(const Matrix& x, const Matrix& y, int epochs, double 
 
     weights_ = Matrix(x.cols(), 1, 0.0);
     bias_ = 0.0;
+    history_.clear();
+    history_.reserve(static_cast<std::size_t>(epochs));
 
     const double n = static_cast<double>(x.rows());
 
@@ -28,6 +30,8 @@ void LinearRegression::fit(const Matrix& x, const Matrix& y, int epochs, double 
         }
 
         const Matrix error = prediction - y;
+        history_.push_back(error.hadamard(error).mean());
+
         const Matrix grad_w = x.transpose().matmul(error) / n;
 
         double grad_b = 0.0;
@@ -62,6 +66,29 @@ double LinearRegression::mse(const Matrix& x, const Matrix& y) const {
     return diff.hadamard(diff).mean();
 }
 
+double LinearRegression::r_squared(const Matrix& x, const Matrix& y) const {
+    const Matrix prediction = predict(x);
+    double y_sum = 0.0;
+    for (std::size_t r = 0; r < y.rows(); ++r) {
+        y_sum += y(r, 0);
+    }
+    const double y_mean = y_sum / static_cast<double>(y.rows());
+
+    double ss_res = 0.0;
+    double ss_tot = 0.0;
+    for (std::size_t r = 0; r < y.rows(); ++r) {
+        const double residual = y(r, 0) - prediction(r, 0);
+        ss_res += residual * residual;
+        const double deviation = y(r, 0) - y_mean;
+        ss_tot += deviation * deviation;
+    }
+
+    if (ss_tot == 0.0) {
+        return 1.0;
+    }
+    return 1.0 - (ss_res / ss_tot);
+}
+
 const Matrix& LinearRegression::coefficients() const {
     ensure_fitted();
     return weights_;
@@ -94,6 +121,10 @@ Matrix PolynomialRegression::predict(const Matrix& x) const {
 
 double PolynomialRegression::mse(const Matrix& x, const Matrix& y) const {
     return linear_.mse(expand_features(x), y);
+}
+
+double PolynomialRegression::r_squared(const Matrix& x, const Matrix& y) const {
+    return linear_.r_squared(expand_features(x), y);
 }
 
 const Matrix& PolynomialRegression::coefficients() const {

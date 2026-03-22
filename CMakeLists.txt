@@ -15,6 +15,7 @@ add_library(animal STATIC
     src/dataset.cpp
     src/statistics.cpp
     src/bayes.cpp
+    src/metrics.cpp
 )
 
 target_include_directories(animal PUBLIC include)
@@ -66,6 +67,7 @@ if (ANIMAL_ENABLE_TESTS)
         tests/test_bayes.cpp
         tests/test_losses_layers.cpp
         tests/test_regression.cpp
+        tests/test_metrics.cpp
     )
     target_link_libraries(animal_tests PRIVATE animal)
     target_compile_options(animal_tests PRIVATE -Wall -Wextra -Wpedantic)
@@ -82,6 +84,7 @@ if (ANIMAL_ENABLE_TESTS)
                 ${CMAKE_BINARY_DIR}/CMakeFiles/animal.dir/src/dataset.cpp.o
                 ${CMAKE_BINARY_DIR}/CMakeFiles/animal.dir/src/statistics.cpp.o
                 ${CMAKE_BINARY_DIR}/CMakeFiles/animal.dir/src/bayes.cpp.o
+                ${CMAKE_BINARY_DIR}/CMakeFiles/animal.dir/src/metrics.cpp.o
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             DEPENDS animal_tests
             COMMENT "Running tests and generating gcov coverage reports"
